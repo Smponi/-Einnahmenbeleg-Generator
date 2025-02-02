@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechnungs Generator</title>
+    <style>
+        /* Grundlegende Stile für einen modernen, minimalistischen Look */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 1rem 1.5rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        h1 {
+            text-align: center;
+            color: #007BFF;
+            margin: 0 0 1rem;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        .floating-label {
+            position: relative;
+            margin-bottom: 0.8rem;
+        }
+        .floating-label input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            background: transparent;
+        }
+        .floating-label input:focus {
+            outline: none;
+            border-color: #007BFF;
+        }
+        .floating-label label {
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            background: #fff;
+            padding: 0 4px;
+            color: #aaa;
+            font-size: 1rem;
+            transition: 0.2s all ease;
+            pointer-events: none;
+        }
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label {
+            top: -8px;
+            left: 6px;
+            font-size: 0.8rem;
+            color: #007BFF;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+        button {
+            padding: 0.7rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            background: #007BFF;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            margin-top: 0.5rem;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .message {
+            text-align: center;
+            margin-top: 1rem;
+            color: green;
+        }
+        .drag-drop {
+            border: 2px dashed #ccc;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rechnungs Generator</h1>
+        {% if message %}
+        <div class="message">{{ message }}</div>
+        {% endif %}
+        <!-- Drag & Drop-Bereich zum Ablegen einer YAML-Datei -->
+        <div id="dragDropArea" class="drag-drop">
+            YAML hierher ziehen, um Felder auszufüllen
+        </div>
+        <form id="invoiceForm" action="/generate" method="post">
+            {% for field in fields %}
+            <div class="floating-label">
+                <input type="text" id="{{ field }}" name="{{ field }}" placeholder=" ">
+                <label for="{{ field }}">{{ field }}</label>
+            </div>
+            {% endfor %}
+            <div class="checkbox-container">
+                <input type="checkbox" id="ganzes_jahr" name="Ganzes Jahr">
+                <label for="ganzes_jahr">Ganzes Jahr?</label>
+            </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="pdf_concat" name="PDF zusammenführen">
+                <label for="pdf_concat">PDF zusammenführen?</label>
+            </div>
+            <button type="submit">Rechnungen erstellen</button>
+        </form>
+    </div>
+    <!-- Einbinden von js-yaml über CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script>
+        const dragDropArea = document.getElementById("dragDropArea");
+        const form = document.getElementById("invoiceForm");
+        
+        dragDropArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dragDropArea.style.borderColor = "#007BFF";
+        });
+        
+        dragDropArea.addEventListener("dragleave", (e) => {
+            e.preventDefault();
+            dragDropArea.style.borderColor = "#ccc";
+        });
+        
+        dragDropArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dragDropArea.style.borderColor = "#ccc";
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === "text/yaml" || file.name.endsWith(".yml") || file.name.endsWith(".yaml")) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        try {
+                            const data = jsyaml.load(event.target.result);
+                            // Fülle die Formularfelder
+                            for (const key in data) {
+                                const input = document.getElementById(key);
+                                if (input) {
+                                    input.value = data[key];
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Fehler beim Parsen der YAML:", err);
+                        }
+                    };
+                    reader.readAsText(file);
+                } else {
+                    alert("Bitte eine gültige YAML-Datei ablegen.");
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

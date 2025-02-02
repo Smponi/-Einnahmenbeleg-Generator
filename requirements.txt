@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pdfrw
+pyyaml
+jinja2
+python-multipart
+pytest 
+loguru
+httpx # for testing
