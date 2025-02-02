@@ -3,4 +3,7 @@ uvicorn
 pdfrw
 pyyaml
 jinja2
-python-multipart 
+python-multipart
+pytest 
+loguru
+httpx # for testing
