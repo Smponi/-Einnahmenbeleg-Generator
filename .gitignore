@@ -1,0 +1,61 @@
+# Byte-compiled / optimierte Dateien
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C-Extensions
+*.so
+
+# Distribution / Packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer-Logfiles
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Test- und Coverage-Ordner
+.cache
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# VS Code settings
+.vscode/
+
+# JetBrains IDEs (PyCharm, IntelliJ, etc.)
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# macOS .DS_Store Dateien
+.DS_Store 
