@@ -58,4 +58,4 @@ docker-compose*.yml
 Dockerfile*
 
 # macOS .DS_Store Dateien
-.DS_Store 
+# .DS_Store 
