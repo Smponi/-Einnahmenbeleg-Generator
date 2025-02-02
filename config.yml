@@ -1,0 +1,14 @@
+# Beispiel YAML-Konfiguration für die CLI-Nutzung.
+# Passe die Werte nach Bedarf an.
+"Beleg Nummer": "INV-001"
+"Brutto": "1000"
+"MwSatz": "19%"
+"Mwst": "190"
+"Netto": "810"
+"Betrag in Worten": "Achthundertzehn"
+"Zahlung von": "FirmaX"
+"Jahr": "2023"
+"Ort": "Berlin"
+"Kontierung": "12345"
+"Verwendungszweck": "Rechnung"
+"Ganzes Jahr": true 
