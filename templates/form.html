@@ -43,8 +43,9 @@
             box-sizing: border-box;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 1rem;
+            font-size: 16px; /* verhindert iOS Auto-Zoom */
             background: transparent;
+            min-height: 44px; /* Apple HIG touch target */
         }
         .floating-label input:focus {
             outline: none;
@@ -53,7 +54,7 @@
         .floating-label label {
             position: absolute;
             left: 8px;
-            top: 8px;
+            top: 11px;
             background: #fff;
             padding: 0 4px;
             color: #aaa;
@@ -68,15 +69,30 @@
             font-size: 0.8rem;
             color: #007BFF;
         }
+        .required-mark {
+            color: #dc3545;
+            margin-left: 2px;
+        }
+        .checkbox-group {
+            margin-bottom: 0.8rem;
+        }
         .checkbox-container {
             display: flex;
             align-items: center;
-            margin-bottom: 0.8rem;
+            min-height: 44px;
         }
         .checkbox-container input[type="checkbox"] {
             margin-right: 0.5rem;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
         }
-        button {
+        .checkbox-hint {
+            font-size: 0.75rem;
+            color: #888;
+            margin: 2px 0 0 26px;
+        }
+        button[type="submit"] {
             padding: 0.7rem;
             font-size: 1rem;
             border: none;
@@ -86,9 +102,30 @@
             cursor: pointer;
             transition: background 0.2s ease;
             margin-top: 0.5rem;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
-        button:hover {
+        button[type="submit"]:hover:not(:disabled) {
             background: #0056b3;
+        }
+        button[type="submit"]:disabled {
+            background: #6c9fd8;
+            cursor: not-allowed;
+        }
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         .message {
             text-align: center;
@@ -102,6 +139,88 @@
             margin-bottom: 1rem;
             border-radius: 4px;
             color: #aaa;
+            cursor: pointer;
+        }
+        .drag-drop:hover, .drag-drop.drag-over {
+            border-color: #007BFF;
+            color: #007BFF;
+        }
+        .file-picker-label {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.3rem 0.8rem;
+            background: #007BFF;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        #yamlFileInput {
+            display: none;
+        }
+        .error-banner {
+            display: none;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .error-banner.visible {
+            display: block;
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1a1a2e;
+            }
+            .container {
+                background: #16213e;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            }
+            h1 {
+                color: #4da6ff;
+            }
+            .floating-label input {
+                border-color: #444;
+                color: #e0e0e0;
+                background: #1e2a45;
+            }
+            .floating-label input:focus {
+                border-color: #4da6ff;
+            }
+            .floating-label label {
+                background: #1e2a45;
+                color: #888;
+            }
+            .floating-label input:focus + label,
+            .floating-label input:not(:placeholder-shown) + label {
+                color: #4da6ff;
+                background: #16213e;
+            }
+            .checkbox-container label {
+                color: #e0e0e0;
+            }
+            .checkbox-hint {
+                color: #888;
+            }
+            .drag-drop {
+                border-color: #444;
+                color: #888;
+                background: #1e2a45;
+            }
+            .drag-drop:hover, .drag-drop.drag-over {
+                border-color: #4da6ff;
+                color: #4da6ff;
+            }
+            .error-banner {
+                background: #4a1c20;
+                border-color: #6b2d35;
+                color: #f5c6cb;
+            }
         }
     </style>
 </head>
@@ -111,72 +230,182 @@
         {% if message %}
         <div class="message">{{ message }}</div>
         {% endif %}
-        <!-- Drag & Drop-Bereich zum Ablegen einer YAML-Datei -->
+
+        <!-- Fehler-Banner -->
+        <div id="errorBanner" class="error-banner" role="alert"></div>
+
+        <!-- Drag & Drop + Datei-Picker (als Fallback für Touch-Geräte) -->
         <div id="dragDropArea" class="drag-drop">
-            YAML hierher ziehen, um Felder auszufüllen
+            <div>YAML hierher ziehen, um Felder auszufüllen</div>
+            <label class="file-picker-label" for="yamlFileInput">Datei auswählen</label>
+            <input type="file" id="yamlFileInput" accept=".yml,.yaml">
         </div>
-        <form id="invoiceForm" action="/generate" method="post">
+
+        <form id="invoiceForm" action="/generate" method="post" novalidate>
             {% for field in fields %}
             <div class="floating-label">
-                <input type="text" id="{{ field }}" name="{{ field }}" placeholder=" ">
-                <label for="{{ field }}">{{ field }}</label>
+                <input type="text"
+                       id="{{ field }}"
+                       name="{{ field }}"
+                       placeholder=" "
+                       maxlength="200"
+                       {% if field in ['Brutto', 'Beleg Nummer', 'Jahr', 'Zahlung von'] %}required{% endif %}>
+                <label for="{{ field }}">{{ field }}{% if field in ['Brutto', 'Beleg Nummer', 'Jahr', 'Zahlung von'] %}<span class="required-mark">*</span>{% endif %}</label>
             </div>
             {% endfor %}
-            <div class="checkbox-container">
-                <input type="checkbox" id="ganzes_jahr" name="Ganzes Jahr">
-                <label for="ganzes_jahr">Ganzes Jahr?</label>
+
+            <div class="checkbox-group">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="ganzes_jahr" name="Ganzes Jahr">
+                    <label for="ganzes_jahr">Ganzes Jahr?</label>
+                </div>
+                <div class="checkbox-hint">Erstellt 12 separate PDFs — einen pro Monat.</div>
             </div>
-            <div class="checkbox-container">
-                <input type="checkbox" id="pdf_concat" name="PDF zusammenführen">
-                <label for="pdf_concat">PDF zusammenführen?</label>
+
+            <div class="checkbox-group">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="pdf_concat" name="PDF zusammenführen">
+                    <label for="pdf_concat">PDF zusammenführen?</label>
+                </div>
+                <div class="checkbox-hint">Fasst alle Monats-PDFs zu einer einzigen Datei zusammen (nur bei "Ganzes Jahr").</div>
             </div>
-            <button type="submit">Rechnungen erstellen</button>
+
+            <button type="submit" id="submitBtn">
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">Rechnungen erstellen</span>
+            </button>
         </form>
     </div>
-    <!-- Einbinden von js-yaml über CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+    <!-- js-yaml via CDN mit Subresource Integrity -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"
+            integrity="sha256-Rdw90D3AegZwWiwpibjH9wkBPwS9U4bjJ51ORH8H69c="
+            crossorigin="anonymous"></script>
     <script>
         const dragDropArea = document.getElementById("dragDropArea");
+        const yamlFileInput = document.getElementById("yamlFileInput");
         const form = document.getElementById("invoiceForm");
-        
+        const submitBtn = document.getElementById("submitBtn");
+        const spinner = document.getElementById("spinner");
+        const btnText = document.getElementById("btnText");
+        const errorBanner = document.getElementById("errorBanner");
+
+        function showError(message) {
+            errorBanner.textContent = message;
+            errorBanner.classList.add("visible");
+            errorBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function hideError() {
+            errorBanner.classList.remove("visible");
+        }
+
+        function loadYamlData(text) {
+            try {
+                const data = jsyaml.load(text);
+                for (const key in data) {
+                    const input = document.getElementById(key);
+                    if (input) {
+                        input.value = data[key];
+                    }
+                }
+                hideError();
+            } catch (err) {
+                showError("Fehler beim Lesen der YAML-Datei: " + err.message);
+            }
+        }
+
+        // Drag & Drop
         dragDropArea.addEventListener("dragover", (e) => {
             e.preventDefault();
-            dragDropArea.style.borderColor = "#007BFF";
+            dragDropArea.classList.add("drag-over");
         });
-        
-        dragDropArea.addEventListener("dragleave", (e) => {
-            e.preventDefault();
-            dragDropArea.style.borderColor = "#ccc";
+
+        dragDropArea.addEventListener("dragleave", () => {
+            dragDropArea.classList.remove("drag-over");
         });
-        
+
         dragDropArea.addEventListener("drop", (e) => {
             e.preventDefault();
-            dragDropArea.style.borderColor = "#ccc";
+            dragDropArea.classList.remove("drag-over");
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
                 if (file.type === "text/yaml" || file.name.endsWith(".yml") || file.name.endsWith(".yaml")) {
                     const reader = new FileReader();
-                    reader.onload = function(event) {
-                        try {
-                            const data = jsyaml.load(event.target.result);
-                            // Fülle die Formularfelder
-                            for (const key in data) {
-                                const input = document.getElementById(key);
-                                if (input) {
-                                    input.value = data[key];
-                                }
-                            }
-                        } catch (err) {
-                            console.error("Fehler beim Parsen der YAML:", err);
-                        }
-                    };
+                    reader.onload = (event) => loadYamlData(event.target.result);
                     reader.readAsText(file);
                 } else {
-                    alert("Bitte eine gültige YAML-Datei ablegen.");
+                    showError("Bitte eine gültige YAML-Datei ablegen (.yml oder .yaml).");
                 }
+            }
+        });
+
+        // Datei-Picker (Fallback für Touch-Geräte)
+        yamlFileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => loadYamlData(event.target.result);
+                reader.readAsText(file);
+            }
+        });
+
+        // Loading-State beim Submit + Client-seitige Validierung
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            hideError();
+
+            // Client-seitige Pflichtfeld-Prüfung
+            const required = form.querySelectorAll("[required]");
+            for (const input of required) {
+                if (!input.value.trim()) {
+                    showError(`Bitte füllen Sie das Pflichtfeld "${input.name}" aus.`);
+                    input.focus();
+                    return;
+                }
+            }
+
+            // Loading-State aktivieren
+            submitBtn.disabled = true;
+            spinner.style.display = "block";
+            btnText.textContent = "Wird generiert…";
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    body: new FormData(form),
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    // Versuche Fehlermeldung aus HTML zu extrahieren
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, "text/html");
+                    const msg = doc.querySelector("p")?.textContent || "Unbekannter Fehler.";
+                    showError(msg);
+                    return;
+                }
+
+                // Datei-Download auslösen
+                const blob = await response.blob();
+                const disposition = response.headers.get("Content-Disposition") || "";
+                const match = disposition.match(/filename=(.+)/);
+                const filename = match ? match[1] : "Rechnungen.zip";
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                showError("Netzwerkfehler: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                spinner.style.display = "none";
+                btnText.textContent = "Rechnungen erstellen";
             }
         });
     </script>
 </body>
-</html> 
+</html>

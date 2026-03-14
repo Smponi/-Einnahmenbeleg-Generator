@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Kopiere den Anwendungscode, Templates und die PDF-Vorlage
 COPY app/ app/
 COPY templates/ templates/
+COPY main.py .
 COPY Einnahmbeleg.pdf .
 
 EXPOSE 8000
@@ -23,4 +24,4 @@ EXPOSE 8000
 # Wechsel zum nicht-root Benutzer
 USER appuser
 
-CMD ["python", "app/main.py"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 

@@ -1,7 +1,10 @@
 import os
+from pathlib import Path
 import pdfrw
 import yaml
 from loguru import logger
+
+TEMPLATE_PATH = Path(__file__).parent.parent / 'Einnahmbeleg.pdf'
 
 # Reihenfolge der Monate, in der auch gemerged werden soll
 MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
@@ -41,7 +44,7 @@ def generate_single_invoice(data, output_dir):
     """
     output_file = os.path.join(output_dir, f"{data.get('Zahlung von', 'Rechnung')}{data.get('Jahr', '')}.pdf")
     logger.info("Generating single invoice: {}", output_file)
-    template_pdf = pdfrw.PdfReader('Einnahmbeleg.pdf')
+    template_pdf = pdfrw.PdfReader(str(TEMPLATE_PATH))
     create_base_template(template_pdf, data)
     template_pdf.Root.Pages.Kids[0].Annots[7].update(pdfrw.PdfDict(V=data.get('Verwendungszweck', '')))
     template_pdf.Root.Pages.Kids[0].Annots[17].update(pdfrw.PdfDict(V=data.get('Verwendungszweck', '')))
@@ -57,7 +60,7 @@ def generate_individual_invoices(data, output_dir):
     counter = 1
     logger.info("Generating individual invoices for each month")
     for month in MONTHS:
-        template_pdf = pdfrw.PdfReader('Einnahmbeleg.pdf')
+        template_pdf = pdfrw.PdfReader(str(TEMPLATE_PATH))
         create_base_template(template_pdf, data)
         month_text = f"{data.get('Verwendungszweck', '')} {month} {data.get('Jahr', '')}"
         template_pdf.Root.Pages.Kids[0].Annots[7].update(pdfrw.PdfDict(V=month_text))
